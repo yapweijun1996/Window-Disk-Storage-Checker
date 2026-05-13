@@ -1,0 +1,273 @@
+name: Deploy demo to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build static demo
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+          cat > _site/storage-report.json <<'JSON'
+          {
+            "schemaVersion": "1.0",
+            "generatedAt": "2026-05-13T00:00:00.000Z",
+            "host": {
+              "computerName": "DEMO-PC",
+              "userName": "demo-user",
+              "osCaption": "Microsoft Windows 11",
+              "osVersion": "10.0.00000",
+              "architecture": "64-bit",
+              "manufacturer": "Demo Manufacturer",
+              "model": "Demo Laptop"
+            },
+            "scan": {
+              "top": 20,
+              "deepScan": true,
+              "largeFileThresholdGb": 1,
+              "adminRequired": false,
+              "destructiveActions": false
+            },
+            "volumes": [
+              {
+                "driveLetter": "C:",
+                "label": "Windows",
+                "fileSystem": "NTFS",
+                "totalGb": 200.78,
+                "usedGb": 176.91,
+                "freeGb": 23.87,
+                "usedPercent": 88.1,
+                "health": "warning"
+              },
+              {
+                "driveLetter": "D:",
+                "label": "Data",
+                "fileSystem": "NTFS",
+                "totalGb": 274.56,
+                "usedGb": 40.6,
+                "freeGb": 233.97,
+                "usedPercent": 14.8,
+                "health": "healthy"
+              }
+            ],
+            "systemFiles": [
+              {
+                "name": "hiberfil.sys",
+                "path": "C:\\hiberfil.sys",
+                "bytes": 6871947673,
+                "gb": 6.4,
+                "cleaningNotes": "Can be removed by disabling hibernation with: powercfg /h off"
+              },
+              {
+                "name": "pagefile.sys",
+                "path": "C:\\pagefile.sys",
+                "bytes": 4294967296,
+                "gb": 4,
+                "cleaningNotes": "Virtual memory file. Do not delete manually; tune only via Windows settings."
+              }
+            ],
+            "knownPaths": [
+              {
+                "label": "AppData Local",
+                "path": "C:\\Users\\demo-user\\AppData\\Local",
+                "category": "app-data",
+                "bytes": 75998429873,
+                "gb": 70.78,
+                "usuallySafeToClean": false,
+                "cleaningNotes": "Application caches, VM files, browser data, and local app storage."
+              },
+              {
+                "label": "WSL local disk",
+                "path": "C:\\Users\\demo-user\\AppData\\Local\\wsl",
+                "category": "developer",
+                "bytes": 34930200919,
+                "gb": 32.53,
+                "usuallySafeToClean": false,
+                "cleaningNotes": "Clean Linux distro contents first, then compact the VHDX."
+              },
+              {
+                "label": "Chrome",
+                "path": "C:\\Users\\demo-user\\AppData\\Local\\Google\\Chrome",
+                "category": "browser",
+                "bytes": 7735056597,
+                "gb": 7.2,
+                "usuallySafeToClean": false,
+                "cleaningNotes": "Use Chrome clear browsing data; do not delete the whole profile blindly."
+              },
+              {
+                "label": "Downloads",
+                "path": "C:\\Users\\demo-user\\Downloads",
+                "category": "user-files",
+                "bytes": 5905580032,
+                "gb": 5.5,
+                "usuallySafeToClean": true,
+                "cleaningNotes": "Usually safe to review, archive, or move to another drive."
+              },
+              {
+                "label": "Temp",
+                "path": "C:\\Users\\demo-user\\AppData\\Local\\Temp",
+                "category": "cache",
+                "bytes": 2600653910,
+                "gb": 2.42,
+                "usuallySafeToClean": true,
+                "cleaningNotes": "Usually safe to clean after closing applications."
+              }
+            ],
+            "breakdowns": {
+              "cRoot": [
+                {
+                  "name": "Users",
+                  "path": "C:\\Users",
+                  "type": "directory",
+                  "bytes": 103079215104,
+                  "gb": 96
+                },
+                {
+                  "name": "Windows",
+                  "path": "C:\\Windows",
+                  "type": "directory",
+                  "bytes": 38654705664,
+                  "gb": 36
+                },
+                {
+                  "name": "Program Files",
+                  "path": "C:\\Program Files",
+                  "type": "directory",
+                  "bytes": 25769803776,
+                  "gb": 24
+                }
+              ],
+              "appDataLocal": [
+                {
+                  "name": "wsl",
+                  "path": "C:\\Users\\demo-user\\AppData\\Local\\wsl",
+                  "type": "directory",
+                  "bytes": 34930200919,
+                  "gb": 32.53
+                },
+                {
+                  "name": "Google",
+                  "path": "C:\\Users\\demo-user\\AppData\\Local\\Google",
+                  "type": "directory",
+                  "bytes": 8589934592,
+                  "gb": 8
+                },
+                {
+                  "name": "Docker",
+                  "path": "C:\\Users\\demo-user\\AppData\\Local\\Docker",
+                  "type": "directory",
+                  "bytes": 5669356831,
+                  "gb": 5.28
+                }
+              ],
+              "appDataRoaming": [
+                {
+                  "name": "Code",
+                  "path": "C:\\Users\\demo-user\\AppData\\Roaming\\Code",
+                  "type": "directory",
+                  "bytes": 4563402752,
+                  "gb": 4.25
+                },
+                {
+                  "name": "npm-cache",
+                  "path": "C:\\Users\\demo-user\\AppData\\Roaming\\npm-cache",
+                  "type": "directory",
+                  "bytes": 1288490188,
+                  "gb": 1.2
+                }
+              ],
+              "wslFiles": [
+                {
+                  "name": "ext4.vhdx",
+                  "path": "C:\\Users\\demo-user\\AppData\\Local\\wsl\\Ubuntu\\ext4.vhdx",
+                  "bytes": 34359738368,
+                  "gb": 32
+                }
+              ]
+            },
+            "largeFiles": [
+              {
+                "name": "archive.zip",
+                "path": "C:\\Users\\demo-user\\Downloads\\archive.zip",
+                "bytes": 3221225472,
+                "gb": 3
+              },
+              {
+                "name": "video-export.mp4",
+                "path": "C:\\Users\\demo-user\\Videos\\video-export.mp4",
+                "bytes": 2147483648,
+                "gb": 2
+              }
+            ],
+            "docker": {
+              "available": true,
+              "summary": [
+                "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE",
+                "Images          12        4         8.2GB     3.1GB (37%)",
+                "Build Cache     42        0         5.4GB     5.4GB"
+              ],
+              "notes": "Run docker builder prune to remove unused build cache."
+            },
+            "recommendations": [
+              {
+                "priority": 1,
+                "title": "Empty Recycle Bin",
+                "command": "Open Recycle Bin and choose Empty Recycle Bin",
+                "risk": "low",
+                "reason": "Deleted files still occupy disk space until the bin is emptied."
+              },
+              {
+                "priority": 2,
+                "title": "Clean temporary files",
+                "command": "Windows Settings > System > Storage > Temporary files",
+                "risk": "low",
+                "reason": "Uses Windows supported cleanup flow and avoids deleting active application data."
+              },
+              {
+                "priority": 3,
+                "title": "Prune Docker build cache",
+                "command": "docker builder prune",
+                "risk": "low-medium",
+                "reason": "Removes unused image build cache; future Docker builds may take longer."
+              }
+            ]
+          }
+          JSON
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -11,6 +11,16 @@ It collects disk usage data with PowerShell and renders a readable report in `in
 - no admin requirement for the default scan
 - interactive tables use Tabulator from CDN when internet access is available
 
+## Demo
+
+The public demo deploys an anonymized sample report through GitHub Pages:
+
+```text
+https://yapweijun1996.github.io/Window-Disk-Storage-Checker/
+```
+
+The deployed demo uses generated sample data only. Local scans still write private report output to the ignored `Report/` folder.
+
 ## Files
 
 - `collect-storage.ps1` - collects disk, known folder, cache, WSL, Docker, and large-file data
