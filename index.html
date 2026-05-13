@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Windows Disk Storage Checker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabulator-tables/6.3.1/css/tabulator.min.css">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f7f8;
+            --surface: #ffffff;
+            --surface-muted: #eef3f3;
+            --surface-strong: #e4ecec;
+            --text: #172026;
+            --muted: #61707a;
+            --line: #d7e0e2;
+            --accent: #0f766e;
+            --accent-soft: #d9f2ef;
+            --accent-strong: #0a4f49;
+            --danger: #b42318;
+            --danger-soft: #fde8e6;
+            --warning: #9a6700;
+            --warning-soft: #fff4d6;
+            --healthy: #137333;
+            --healthy-soft: #e3f3e7;
+            --info: #3347a8;
+            --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+            --radius: 0.5rem;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.5;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        summary:focus-visible,
+        .tabulator .tabulator-footer .tabulator-page:focus-visible {
+            outline: 3px solid rgba(15, 118, 110, 0.3);
+            outline-offset: 2px;
+        }
+
+        .app-shell {
+            width: min(100% - 1rem, 88rem);
+            margin: 0 auto;
+            padding: 0.75rem 0 2rem;
+        }
+
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: grid;
+            gap: 1rem;
+            padding: 0.85rem 0;
+            background: rgba(245, 247, 248, 0.92);
+            backdrop-filter: blur(12px);
+        }
+
+        .brand {
+            display: grid;
+            gap: 0.2rem;
+            min-width: 0;
+        }
+
+        .eyebrow {
+            margin: 0;
+            color: var(--accent-strong);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            margin-bottom: 0;
+            font-size: 1.55rem;
+            line-height: 1.15;
+            letter-spacing: 0;
+        }
+
+        h2 {
+            margin-bottom: 0.85rem;
+            font-size: 1.1rem;
+            letter-spacing: 0;
+        }
+
+        h3 {
+            margin-bottom: 0.45rem;
+            font-size: 0.98rem;
+            letter-spacing: 0;
+        }
+
+        .subtitle,
+        .muted,
+        .metric-note {
+            color: var(--muted);
+        }
+
+        .subtitle {
+            margin-bottom: 0;
+            max-width: 68ch;
+            font-size: 0.95rem;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.55rem;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.75rem;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: var(--shadow);
+        }
+
+        .button.primary {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .button:hover {
+            border-color: var(--accent);
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .notice {
+            display: none;
+            margin: 0.25rem 0 1rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid #dfbd58;
+            border-radius: var(--radius);
+            background: var(--warning-soft);
+            color: #533f00;
+        }
+
+        .notice.is-visible {
+            display: block;
+        }
+
+        .overview {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-panel,
+        .panel,
+        .metric,
+        .drive-card,
+        .recommendation {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .status-panel {
+            display: grid;
+            gap: 1rem;
+            padding: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f7f6 100%);
+        }
+
+        .status-copy {
+            min-width: 0;
+        }
+
+        .status-label {
+            margin: 0 0 0.25rem;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .status-value {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 750;
+            line-height: 1.05;
+        }
+
+        .status-value.critical {
+            color: var(--danger);
+        }
+
+        .status-value.warning {
+            color: var(--warning);
+        }
+
+        .status-value.healthy {
+            color: var(--healthy);
+        }
+
+        .status-note {
+            margin: 0.45rem 0 0;
+            color: var(--muted);
+        }
+
+        .scan-facts {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .fact {
+            min-width: 0;
+            padding: 0.75rem;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .fact span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .fact strong {
+            display: block;
+            margin-top: 0.15rem;
+            overflow-wrap: anywhere;
+            font-size: 0.95rem;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .metric {
+            padding: 0.95rem;
+        }
+
+        .metric-label {
+            margin-bottom: 0.25rem;
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.45rem;
+            font-weight: 750;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-note {
+            margin-top: 0.35rem;
+            font-size: 0.88rem;
+        }
+
+        .panel {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .section-heading h2 {
+            margin-bottom: 0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.7rem;
+            padding: 0.2rem 0.55rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--surface-muted);
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .drive-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .drive-card {
+            padding: 0.95rem;
+        }
+
+        .drive-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .drive-name {
+            font-weight: 750;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 1.8rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .status::before {
+            content: "";
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .status.critical {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .status.warning {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .status.healthy {
+            background: var(--healthy-soft);
+            color: var(--healthy);
+        }
+
+        .bar {
+            width: 100%;
+            height: 0.7rem;
+            overflow: hidden;
+            border-radius: 999px;
+            background: var(--surface-strong);
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: var(--accent);
+        }
+
+        .bar-fill.critical {
+            background: var(--danger);
+        }
+
+        .bar-fill.warning {
+            background: var(--warning);
+        }
+
+        .bar-fill.healthy {
+            background: var(--healthy);
+        }
+
+        .drive-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.65rem;
+            margin-top: 0.7rem;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .drive-stats strong {
+            display: block;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .content-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .detail-stack {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        details {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        summary {
+            min-height: 3rem;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            font-weight: 750;
+            list-style-position: inside;
+            background: var(--surface-muted);
+        }
+
+        .detail-body {
+            padding: 1rem;
+        }
+
+        .recommendation-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .recommendation {
+            padding: 0.9rem;
+        }
+
+        .recommendation p {
+            margin-bottom: 0.6rem;
+        }
+
+        .path {
+            max-width: 40rem;
+            overflow-wrap: anywhere;
+            color: var(--muted);
+            font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+            font-size: 0.83rem;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 1.65rem;
+            padding: 0.15rem 0.5rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--surface-muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .risk-low {
+            color: var(--healthy);
+        }
+
+        .risk-medium,
+        .risk-low-medium {
+            color: var(--warning);
+        }
+
+        .risk-high {
+            color: var(--danger);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+        }
+
+        table {
+            width: 100%;
+            min-width: 40rem;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--surface-muted);
+            font-weight: 750;
+        }
+
+        td.num,
+        th.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .data-table-tools {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .field {
+            display: grid;
+            gap: 0.35rem;
+            min-width: 0;
+        }
+
+        .field label {
+            font-size: 0.82rem;
+            font-weight: 750;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            min-height: 2.75rem;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .tabulator {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            overflow: hidden;
+        }
+
+        .tabulator .tabulator-header {
+            border-bottom: 1px solid var(--line);
+            background: var(--surface-muted);
+            color: var(--text);
+            font-weight: 750;
+        }
+
+        .tabulator .tabulator-header .tabulator-col {
+            border-right-color: var(--line);
+            background: var(--surface-muted);
+        }
+
+        .tabulator .tabulator-row {
+            border-bottom-color: var(--line);
+        }
+
+        .tabulator .tabulator-row .tabulator-cell {
+            border-right-color: var(--line);
+            padding: 0.7rem 0.8rem;
+            white-space: normal;
+        }
+
+        .tabulator .tabulator-footer {
+            border-top: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .tabulator .tabulator-footer .tabulator-page,
+        .tabulator .tabulator-footer .tabulator-page-size {
+            min-height: 2.25rem;
+            border: 1px solid var(--line);
+            border-radius: 0.35rem;
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .tabulator .tabulator-footer .tabulator-page {
+            min-width: 2.25rem;
+        }
+
+        .tabulator .tabulator-footer .tabulator-page.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        pre {
+            overflow: auto;
+            margin: 0;
+            padding: 1rem;
+            border-radius: var(--radius);
+            background: #111820;
+            color: #edf4f7;
+            font-size: 0.85rem;
+        }
+
+        .empty {
+            padding: 1rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (min-width: 34rem) {
+            .actions {
+                grid-template-columns: repeat(3, auto);
+                justify-content: start;
+            }
+
+            .scan-facts {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .metric-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .data-table-tools {
+                grid-template-columns: minmax(12rem, 1fr) 10rem;
+                align-items: end;
+            }
+        }
+
+        @media (min-width: 54rem) {
+            .app-shell {
+                width: min(100% - 2rem, 88rem);
+                padding-top: 1rem;
+            }
+
+            .app-header {
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .actions {
+                justify-content: end;
+            }
+
+            .status-panel {
+                grid-template-columns: minmax(0, 1.1fr) minmax(24rem, 0.9fr);
+                align-items: center;
+                padding: 1.25rem;
+            }
+
+            .metric-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .drive-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 74rem) {
+            .content-grid {
+                grid-template-columns: minmax(0, 1.4fr) minmax(22rem, 0.6fr);
+                align-items: start;
+            }
+
+            .side-column {
+                position: sticky;
+                top: 5.25rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app-shell">
+        <header class="app-header">
+            <div class="brand">
+                <p class="eyebrow">Local storage report</p>
+                <h1>Windows Disk Storage Checker</h1>
+                <p class="subtitle">A local dashboard for finding disk pressure, large folders, cleanup candidates, and engineering details.</p>
+            </div>
+            <div class="actions" aria-label="Report actions">
+                <button class="button primary" type="button" id="reloadButton">Reload report</button>
+                <label class="button" for="jsonInput">Load JSON</label>
+                <input class="visually-hidden" id="jsonInput" type="file" accept="application/json,.json">
+                <button class="button" type="button" id="exportButton">Export JSON</button>
+            </div>
+        </header>
+
+        <p class="notice" id="notice" role="status"></p>
+
+        <section class="overview" aria-label="Storage overview">
+            <div class="status-panel">
+                <div class="status-copy">
+                    <p class="status-label">Main drive status</p>
+                    <p class="status-value" id="mainStatus">Loading</p>
+                    <p class="status-note" id="mainStatusNote">Reading storage-report.json</p>
+                </div>
+                <div class="scan-facts" aria-label="Report facts">
+                    <div class="fact">
+                        <span>Generated</span>
+                        <strong id="generatedFact">-</strong>
+                    </div>
+                    <div class="fact">
+                        <span>Machine</span>
+                        <strong id="machineFact">-</strong>
+                    </div>
+                    <div class="fact">
+                        <span>Scan mode</span>
+                        <strong id="scanModeFact">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-grid">
+                <article class="metric">
+                    <div class="metric-label">Total used</div>
+                    <div class="metric-value" id="usedMetric">-</div>
+                    <div class="metric-note">Across reported volumes</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">Available free</div>
+                    <div class="metric-value" id="freeMetric">-</div>
+                    <div class="metric-note">Across reported volumes</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">Largest known path</div>
+                    <div class="metric-value" id="largestKnownMetric">-</div>
+                    <div class="metric-note" id="largestKnownNote">-</div>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">Reported volumes</div>
+                    <div class="metric-value" id="volumeMetric">-</div>
+                    <div class="metric-note">Detected drive letters</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="drivesHeading">
+            <div class="section-heading">
+                <h2 id="drivesHeading">Drives</h2>
+                <span class="badge" id="driveCountBadge">-</span>
+            </div>
+            <div class="drive-list" id="driveList"></div>
+        </section>
+
+        <div class="content-grid">
+            <div>
+                <section class="panel" aria-labelledby="knownPathsHeading">
+                    <div class="section-heading">
+                        <h2 id="knownPathsHeading">Known Areas</h2>
+                        <span class="badge" id="knownPathsBadge">-</span>
+                    </div>
+                    <div id="knownPathsTable"></div>
+                </section>
+
+                <section class="panel" aria-labelledby="engineerHeading">
+                    <div class="section-heading">
+                        <h2 id="engineerHeading">Engineer Details</h2>
+                        <span class="badge">Drilldown</span>
+                    </div>
+                    <div class="detail-stack">
+                        <details open>
+                            <summary>Largest C:\ root items</summary>
+                            <div class="detail-body" id="rootBreakdown"></div>
+                        </details>
+                        <details>
+                            <summary>Largest AppData Local items</summary>
+                            <div class="detail-body" id="localBreakdown"></div>
+                        </details>
+                        <details>
+                            <summary>Largest AppData Roaming items</summary>
+                            <div class="detail-body" id="roamingBreakdown"></div>
+                        </details>
+                        <details>
+                            <summary>System files</summary>
+                            <div class="detail-body" id="systemFiles"></div>
+                        </details>
+                        <details>
+                            <summary>Large files from deep scan</summary>
+                            <div class="detail-body" id="largeFiles"></div>
+                        </details>
+                        <details>
+                            <summary>Docker summary</summary>
+                            <div class="detail-body">
+                                <pre id="dockerSummary">No Docker data loaded.</pre>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="side-column">
+                <section class="panel" aria-labelledby="recommendationsHeading">
+                    <div class="section-heading">
+                        <h2 id="recommendationsHeading">Cleanup Recommendations</h2>
+                        <span class="badge" id="recommendationBadge">-</span>
+                    </div>
+                    <div class="recommendation-list" id="recommendationsList"></div>
+                </section>
+
+                <section class="panel" aria-labelledby="hostHeading">
+                    <h2 id="hostHeading">Report Metadata</h2>
+                    <div id="metadata"></div>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <script id="embeddedReportData" type="application/json"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator-tables/6.3.1/js/tabulator.min.js"></script>
+    <script>
+        const fallbackReport = {
+            schemaVersion: "1.0",
+            generatedAt: new Date().toISOString(),
+            host: {
+                computerName: "Sample",
+                userName: "sample-user",
+                osCaption: "Microsoft Windows",
+                osVersion: "Sample",
+                architecture: "64-bit"
+            },
+            scan: {
+                deepScan: false,
+                destructiveActions: false
+            },
+            volumes: [
+                {
+                    driveLetter: "C:",
+                    label: "Windows",
+                    fileSystem: "NTFS",
+                    totalGb: 201,
+                    usedGb: 182,
+                    freeGb: 19,
+                    usedPercent: 91,
+                    health: "critical"
+                },
+                {
+                    driveLetter: "D:",
+                    label: "data",
+                    fileSystem: "NTFS",
+                    totalGb: 275,
+                    usedGb: 41,
+                    freeGb: 234,
+                    usedPercent: 15,
+                    health: "healthy"
+                }
+            ],
+            knownPaths: [
+                {
+                    label: "AppData Local",
+                    path: "C:\\Users\\sample\\AppData\\Local",
+                    category: "app-data",
+                    gb: 70.76,
+                    usuallySafeToClean: false,
+                    cleaningNotes: "Application caches, VM files, browser data, and local app storage."
+                },
+                {
+                    label: "WSL local disk",
+                    path: "C:\\Users\\sample\\AppData\\Local\\wsl",
+                    category: "developer",
+                    gb: 32.53,
+                    usuallySafeToClean: false,
+                    cleaningNotes: "Clean Linux distro contents first, then compact the VHDX."
+                }
+            ],
+            recommendations: [
+                {
+                    priority: 1,
+                    title: "Empty Recycle Bin",
+                    command: "Open Recycle Bin and choose Empty Recycle Bin",
+                    risk: "low",
+                    reason: "Deleted files still occupy disk space until the bin is emptied."
+                },
+                {
+                    priority: 2,
+                    title: "Clean temporary files",
+                    command: "Windows Settings > System > Storage > Temporary files",
+                    risk: "low",
+                    reason: "Uses Windows supported cleanup flow."
+                }
+            ],
+            breakdowns: {
+                cRoot: [],
+                appDataLocal: [],
+                appDataRoaming: [],
+                wslFiles: []
+            },
+            systemFiles: [],
+            largeFiles: [],
+            docker: {
+                available: false,
+                summary: [],
+                notes: "Sample data."
+            }
+        };
+
+        let report = fallbackReport;
+        const tableInstances = new Map();
+
+        const elements = {
+            notice: document.querySelector("#notice"),
+            mainStatus: document.querySelector("#mainStatus"),
+            mainStatusNote: document.querySelector("#mainStatusNote"),
+            generatedFact: document.querySelector("#generatedFact"),
+            machineFact: document.querySelector("#machineFact"),
+            scanModeFact: document.querySelector("#scanModeFact"),
+            usedMetric: document.querySelector("#usedMetric"),
+            freeMetric: document.querySelector("#freeMetric"),
+            largestKnownMetric: document.querySelector("#largestKnownMetric"),
+            largestKnownNote: document.querySelector("#largestKnownNote"),
+            volumeMetric: document.querySelector("#volumeMetric"),
+            driveCountBadge: document.querySelector("#driveCountBadge"),
+            knownPathsBadge: document.querySelector("#knownPathsBadge"),
+            recommendationBadge: document.querySelector("#recommendationBadge"),
+            driveList: document.querySelector("#driveList"),
+            knownPathsTable: document.querySelector("#knownPathsTable"),
+            recommendationsList: document.querySelector("#recommendationsList"),
+            dockerSummary: document.querySelector("#dockerSummary"),
+            metadata: document.querySelector("#metadata"),
+            reloadButton: document.querySelector("#reloadButton"),
+            jsonInput: document.querySelector("#jsonInput"),
+            exportButton: document.querySelector("#exportButton")
+        };
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, char => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#39;"
+            }[char]));
+        }
+
+        function plainText(value) {
+            const template = document.createElement("template");
+            template.innerHTML = String(value ?? "");
+            return template.content.textContent || "";
+        }
+
+        function formatGb(value) {
+            const number = Number(value || 0);
+            return `${number.toLocaleString(undefined, { maximumFractionDigits: 2 })} GB`;
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return String(value);
+            }
+
+            return date.toLocaleString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function statusLabel(health) {
+            const labels = {
+                critical: "Critical",
+                warning: "Warning",
+                healthy: "Healthy"
+            };
+            return labels[health] || "Unknown";
+        }
+
+        function getMainDrive(data) {
+            return data.volumes?.find(volume => volume.driveLetter === "C:") || data.volumes?.[0];
+        }
+
+        function showNotice(message) {
+            elements.notice.textContent = message;
+            elements.notice.classList.add("is-visible");
+        }
+
+        function hideNotice() {
+            elements.notice.textContent = "";
+            elements.notice.classList.remove("is-visible");
+        }
+
+        function renderSummary(data) {
+            const volumes = data.volumes || [];
+            const main = getMainDrive(data);
+            const host = data.host || {};
+            const usedTotal = volumes.reduce((sum, volume) => sum + Number(volume.usedGb || 0), 0);
+            const freeTotal = volumes.reduce((sum, volume) => sum + Number(volume.freeGb || 0), 0);
+            const largestKnown = [...(data.knownPaths || [])].sort((a, b) => Number(b.gb || 0) - Number(a.gb || 0))[0];
+
+            elements.mainStatus.textContent = main ? statusLabel(main.health) : "No data";
+            elements.mainStatus.className = `status-value ${main?.health || ""}`;
+            elements.mainStatusNote.textContent = main
+                ? `${main.driveLetter} uses ${main.usedPercent}% (${formatGb(main.usedGb)} of ${formatGb(main.totalGb)})`
+                : "Run collect-storage.ps1 to generate data";
+            elements.generatedFact.textContent = formatDate(data.generatedAt);
+            elements.machineFact.textContent = [host.computerName, host.userName].filter(Boolean).join(" / ") || "-";
+            elements.scanModeFact.textContent = data.scan?.deepScan ? "Deep scan" : "Default scan";
+            elements.usedMetric.textContent = formatGb(usedTotal);
+            elements.freeMetric.textContent = formatGb(freeTotal);
+            elements.largestKnownMetric.textContent = largestKnown ? formatGb(largestKnown.gb) : "-";
+            elements.largestKnownNote.textContent = largestKnown ? largestKnown.label : "No known path data";
+            elements.volumeMetric.textContent = String(volumes.length || 0);
+            elements.driveCountBadge.textContent = `${volumes.length || 0} volumes`;
+            elements.knownPathsBadge.textContent = `${data.knownPaths?.length || 0} areas`;
+            elements.recommendationBadge.textContent = `${data.recommendations?.length || 0} actions`;
+        }
+
+        function renderDrives(data) {
+            const volumes = data.volumes || [];
+            if (!volumes.length) {
+                elements.driveList.innerHTML = "<p class=\"empty\">No volume data available.</p>";
+                return;
+            }
+
+            elements.driveList.innerHTML = volumes.map(volume => {
+                const health = volume.health || "healthy";
+                const percent = Math.max(0, Math.min(100, Number(volume.usedPercent || 0)));
+
+                return `
+                    <article class="drive-card">
+                        <div class="drive-header">
+                            <div>
+                                <div class="drive-name">${escapeHtml(volume.driveLetter)} ${escapeHtml(volume.label || "")}</div>
+                                <div class="muted">${escapeHtml(volume.fileSystem || "Unknown filesystem")}</div>
+                            </div>
+                            <div class="status ${escapeHtml(health)}">${statusLabel(health)}</div>
+                        </div>
+                        <div class="bar" aria-label="${escapeHtml(volume.driveLetter)} used ${percent}%">
+                            <div class="bar-fill ${escapeHtml(health)}" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="drive-stats">
+                            <span><strong>${formatGb(volume.usedGb)}</strong>Used</span>
+                            <span><strong>${formatGb(volume.freeGb)}</strong>Free</span>
+                            <span><strong>${percent}%</strong>Used</span>
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        function fallbackTableFor(items, columns) {
+            if (!items?.length) {
+                return "<p class=\"empty\">No data available.</p>";
+            }
+
+            return `
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>${columns.map(column => `<th scope="col" class="${column.hozAlign === "right" ? "num" : ""}">${escapeHtml(column.title)}</th>`).join("")}</tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(item => `
+                                <tr>
+                                    ${columns.map(column => {
+                                        const rawValue = item[column.field];
+                                        const value = column.formatter
+                                            ? column.formatter({ getValue: () => rawValue, getData: () => item })
+                                            : escapeHtml(rawValue);
+                                        return `<td class="${column.hozAlign === "right" ? "num" : ""}">${value}</td>`;
+                                    }).join("")}
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function rowMatchesQuery(row, query, fields) {
+            if (!query) {
+                return true;
+            }
+
+            const haystack = fields
+                .map(field => row[field])
+                .map(value => plainText(value))
+                .join(" ")
+                .toLowerCase();
+
+            return haystack.includes(query);
+        }
+
+        function renderDataTable(container, tableKey, items, columns, options = {}) {
+            const rows = Array.isArray(items) ? items : [];
+            tableInstances.get(tableKey)?.destroy();
+            tableInstances.delete(tableKey);
+
+            if (!rows.length) {
+                container.innerHTML = "<p class=\"empty\">No data available.</p>";
+                return;
+            }
+
+            if (typeof Tabulator === "undefined") {
+                container.innerHTML = fallbackTableFor(rows, columns);
+                return;
+            }
+
+            const filterId = `${tableKey}Filter`;
+            const pageSizeId = `${tableKey}PageSize`;
+            const gridId = `${tableKey}Grid`;
+            const searchableFields = options.searchableFields || columns.map(column => column.field).filter(Boolean);
+
+            container.innerHTML = `
+                <div class="data-table-tools">
+                    <div class="field">
+                        <label for="${filterId}">Filter</label>
+                        <input id="${filterId}" type="search" placeholder="${escapeHtml(options.placeholder || "Search this table")}">
+                    </div>
+                    <div class="field">
+                        <label for="${pageSizeId}">Rows per page</label>
+                        <select id="${pageSizeId}">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="${gridId}"></div>
+            `;
+
+            const table = new Tabulator(`#${gridId}`, {
+                data: rows,
+                columns,
+                layout: "fitColumns",
+                pagination: "local",
+                paginationSize: 10,
+                placeholder: "No matching rows.",
+                responsiveLayout: "collapse",
+                sortMode: "local"
+            });
+
+            tableInstances.set(tableKey, table);
+
+            container.querySelector(`#${filterId}`).addEventListener("input", event => {
+                const query = event.target.value.trim().toLowerCase();
+                table.setFilter(row => rowMatchesQuery(row, query, searchableFields));
+            });
+
+            container.querySelector(`#${pageSizeId}`).addEventListener("change", event => {
+                table.setPageSize(Number(event.target.value));
+            });
+        }
+
+        function knownAreaColumns() {
+            return [
+                {
+                    title: "Area",
+                    field: "label",
+                    minWidth: 220,
+                    formatter: cell => {
+                        const row = cell.getData();
+                        return `<strong>${escapeHtml(row.label)}</strong><div class="path">${escapeHtml(row.path)}</div>`;
+                    }
+                },
+                {
+                    title: "Size",
+                    field: "gb",
+                    sorter: "number",
+                    hozAlign: "right",
+                    width: 120,
+                    formatter: cell => formatGb(cell.getValue())
+                },
+                {
+                    title: "Category",
+                    field: "category",
+                    width: 140,
+                    formatter: cell => `<span class="tag">${escapeHtml(cell.getValue() || "uncategorized")}</span>`
+                },
+                {
+                    title: "Cleaning Guidance",
+                    field: "cleaningNotes",
+                    minWidth: 280,
+                    formatter: cell => {
+                        const row = cell.getData();
+                        return `
+                            ${escapeHtml(row.cleaningNotes || "")}
+                            <div class="muted">${row.usuallySafeToClean ? "Usually safe to clean after review." : "Review before cleanup."}</div>
+                        `;
+                    }
+                }
+            ];
+        }
+
+        function fileColumns() {
+            return [
+                { title: "Name", field: "name", minWidth: 180, formatter: cell => `<strong>${escapeHtml(cell.getValue())}</strong>` },
+                { title: "Size", field: "gb", sorter: "number", hozAlign: "right", width: 120, formatter: cell => formatGb(cell.getValue()) },
+                { title: "Path", field: "path", minWidth: 320, formatter: cell => `<div class="path">${escapeHtml(cell.getValue())}</div>` }
+            ];
+        }
+
+        function renderKnownPaths(data) {
+            renderDataTable(elements.knownPathsTable, "knownPaths", data.knownPaths || [], knownAreaColumns(), {
+                placeholder: "Search label, path, category, or guidance",
+                searchableFields: ["label", "path", "category", "cleaningNotes"]
+            });
+        }
+
+        function renderRecommendations(data) {
+            const recommendations = data.recommendations || [];
+            if (!recommendations.length) {
+                elements.recommendationsList.innerHTML = "<p class=\"empty\">No recommendations found.</p>";
+                return;
+            }
+
+            elements.recommendationsList.innerHTML = recommendations
+                .sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0))
+                .map(item => `
+                    <section class="recommendation">
+                        <h3>${escapeHtml(item.priority)}. ${escapeHtml(item.title)}</h3>
+                        <p>${escapeHtml(item.reason)}</p>
+                        <p><span class="tag risk-${escapeHtml(item.risk || "")}">Risk: ${escapeHtml(item.risk || "unknown")}</span></p>
+                        <div class="path">${escapeHtml(item.command)}</div>
+                    </section>
+                `).join("");
+        }
+
+        function renderEngineerDetails(data) {
+            const columns = fileColumns();
+            renderDataTable(document.querySelector("#rootBreakdown"), "rootBreakdown", data.breakdowns?.cRoot || [], columns, {
+                placeholder: "Search name or path",
+                searchableFields: ["name", "path"]
+            });
+            renderDataTable(document.querySelector("#localBreakdown"), "localBreakdown", data.breakdowns?.appDataLocal || [], columns, {
+                placeholder: "Search name or path",
+                searchableFields: ["name", "path"]
+            });
+            renderDataTable(document.querySelector("#roamingBreakdown"), "roamingBreakdown", data.breakdowns?.appDataRoaming || [], columns, {
+                placeholder: "Search name or path",
+                searchableFields: ["name", "path"]
+            });
+            renderDataTable(document.querySelector("#systemFiles"), "systemFiles", data.systemFiles || [], [
+                ...columns,
+                { title: "Notes", field: "cleaningNotes", minWidth: 260, formatter: cell => escapeHtml(cell.getValue()) }
+            ], {
+                placeholder: "Search name, path, or notes",
+                searchableFields: ["name", "path", "cleaningNotes"]
+            });
+            renderDataTable(document.querySelector("#largeFiles"), "largeFiles", data.largeFiles || [], columns, {
+                placeholder: "Search name or path",
+                searchableFields: ["name", "path"]
+            });
+            elements.dockerSummary.textContent = Array.isArray(data.docker?.summary)
+                ? data.docker.summary.join("\n")
+                : String(data.docker?.summary || data.docker?.notes || "No Docker data loaded.");
+        }
+
+        function renderMetadata(data) {
+            const host = data.host || {};
+            elements.metadata.innerHTML = `
+                <div class="table-wrap">
+                    <table>
+                        <tbody>
+                            <tr><th scope="row">Generated</th><td>${escapeHtml(formatDate(data.generatedAt))}</td></tr>
+                            <tr><th scope="row">Computer</th><td>${escapeHtml(host.computerName || "-")}</td></tr>
+                            <tr><th scope="row">User</th><td>${escapeHtml(host.userName || "-")}</td></tr>
+                            <tr><th scope="row">OS</th><td>${escapeHtml(host.osCaption || "-")} ${escapeHtml(host.osVersion || "")}</td></tr>
+                            <tr><th scope="row">Architecture</th><td>${escapeHtml(host.architecture || "-")}</td></tr>
+                            <tr><th scope="row">Deep scan</th><td>${data.scan?.deepScan ? "Enabled" : "Disabled"}</td></tr>
+                            <tr><th scope="row">Destructive actions</th><td>${data.scan?.destructiveActions ? "Yes" : "No"}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function redrawTables() {
+            tableInstances.forEach(table => table.redraw(true));
+        }
+
+        function render(data) {
+            report = data;
+            renderSummary(data);
+            renderDrives(data);
+            renderKnownPaths(data);
+            renderRecommendations(data);
+            renderEngineerDetails(data);
+            renderMetadata(data);
+            window.requestAnimationFrame(redrawTables);
+        }
+
+        async function loadReport() {
+            try {
+                const response = await fetch("storage-report.json", { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error(`storage-report.json returned ${response.status}`);
+                }
+                const data = await response.json();
+                hideNotice();
+                render(data);
+            } catch (error) {
+                const embeddedData = document.querySelector("#embeddedReportData")?.textContent?.trim();
+                if (embeddedData) {
+                    try {
+                        hideNotice();
+                        render(JSON.parse(embeddedData));
+                        return;
+                    } catch (embeddedError) {
+                        showNotice("Embedded report data is not valid JSON.");
+                    }
+                } else {
+                    showNotice("Using embedded sample data. Run collect-storage.ps1 to generate storage-report.json.");
+                }
+                render(fallbackReport);
+            }
+        }
+
+        function exportJson() {
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `storage-report-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.append(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadJsonFile(event) {
+            const file = event.target.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+                try {
+                    const data = JSON.parse(String(reader.result || "{}"));
+                    hideNotice();
+                    render(data);
+                } catch (error) {
+                    showNotice("Selected file is not valid JSON.");
+                }
+            });
+            reader.readAsText(file);
+        }
+
+        elements.reloadButton.addEventListener("click", loadReport);
+        elements.exportButton.addEventListener("click", exportJson);
+        elements.jsonInput.addEventListener("change", loadJsonFile);
+        document.querySelectorAll("details").forEach(detail => {
+            detail.addEventListener("toggle", () => window.requestAnimationFrame(redrawTables));
+        });
+
+        loadReport();
+    </script>
+</body>
+</html>
