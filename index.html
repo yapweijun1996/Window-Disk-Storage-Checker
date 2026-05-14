@@ -635,6 +635,81 @@
             text-align: center;
         }
 
+        .sparkline {
+            display: block;
+            width: 100%;
+            height: 3.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .sparkline path.area {
+            fill: var(--accent-soft);
+            stroke: none;
+        }
+
+        .sparkline path.line {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 1.5;
+        }
+
+        .sparkline circle.last {
+            fill: var(--accent);
+        }
+
+        .sparkline text {
+            fill: var(--muted);
+            font-size: 0.7rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .errors-list {
+            max-height: 18rem;
+            overflow-y: auto;
+            font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8rem;
+        }
+
+        .errors-list .error-row {
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .errors-list .error-row:last-child {
+            border-bottom: 0;
+        }
+
+        .errors-list .error-stage {
+            color: var(--warning);
+            font-weight: 700;
+        }
+
+        .errors-list .error-path {
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        .schema-warning {
+            display: none;
+            margin: 0.25rem 0 1rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--danger);
+            border-radius: var(--radius);
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .schema-warning.is-visible {
+            display: block;
+        }
+
+        .lang-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+        }
+
         @media (min-width: 34rem) {
             .actions {
                 grid-template-columns: repeat(3, auto);
@@ -713,38 +788,41 @@
     <main class="app-shell">
         <header class="app-header">
             <div class="brand">
-                <p class="eyebrow">Local storage report</p>
-                <h1>Windows Disk Storage Checker</h1>
-                <p class="subtitle">A local dashboard for finding disk pressure, large folders, cleanup candidates, and engineering details.</p>
+                <p class="eyebrow" data-i18n="brand.eyebrow">Local storage report</p>
+                <h1 data-i18n="brand.title">Windows Disk Storage Checker</h1>
+                <p class="subtitle" data-i18n="brand.subtitle">A local dashboard for finding disk pressure, large folders, cleanup candidates, and engineering details.</p>
             </div>
             <div class="actions" aria-label="Report actions">
-                <button class="button primary" type="button" id="reloadButton">Reload report</button>
-                <label class="button" for="jsonInput">Load JSON</label>
+                <button class="button primary" type="button" id="reloadButton" data-i18n="action.reload">Reload report</button>
+                <label class="button" for="jsonInput" data-i18n="action.loadJson">Load JSON</label>
                 <input class="visually-hidden" id="jsonInput" type="file" accept="application/json,.json">
-                <button class="button" type="button" id="exportButton">Export JSON</button>
+                <button class="button" type="button" id="exportButton" data-i18n="action.export">Export JSON</button>
+                <button class="button" type="button" id="langToggle" aria-label="Toggle language">中文</button>
             </div>
         </header>
 
+        <p class="schema-warning" id="schemaWarning" role="alert"></p>
         <p class="notice" id="notice" role="status"></p>
 
         <section class="overview" aria-label="Storage overview">
             <div class="status-panel">
                 <div class="status-copy">
-                    <p class="status-label">Main drive status</p>
+                    <p class="status-label" data-i18n="status.main">Main drive status</p>
                     <p class="status-value" id="mainStatus">Loading</p>
                     <p class="status-note" id="mainStatusNote">Reading storage-report.json</p>
+                    <div id="historySparkline"></div>
                 </div>
                 <div class="scan-facts" aria-label="Report facts">
                     <div class="fact">
-                        <span>Generated</span>
+                        <span data-i18n="fact.generated">Generated</span>
                         <strong id="generatedFact">-</strong>
                     </div>
                     <div class="fact">
-                        <span>Machine</span>
+                        <span data-i18n="fact.machine">Machine</span>
                         <strong id="machineFact">-</strong>
                     </div>
                     <div class="fact">
-                        <span>Scan mode</span>
+                        <span data-i18n="fact.scanMode">Scan mode</span>
                         <strong id="scanModeFact">-</strong>
                     </div>
                 </div>
@@ -752,31 +830,31 @@
 
             <div class="metric-grid">
                 <article class="metric">
-                    <div class="metric-label">Total used</div>
+                    <div class="metric-label" data-i18n="metric.used">Total used</div>
                     <div class="metric-value" id="usedMetric">-</div>
-                    <div class="metric-note">Across reported volumes</div>
+                    <div class="metric-note" data-i18n="metric.usedNote">Across reported volumes</div>
                 </article>
                 <article class="metric">
-                    <div class="metric-label">Available free</div>
+                    <div class="metric-label" data-i18n="metric.free">Available free</div>
                     <div class="metric-value" id="freeMetric">-</div>
-                    <div class="metric-note">Across reported volumes</div>
+                    <div class="metric-note" data-i18n="metric.freeNote">Across reported volumes</div>
                 </article>
                 <article class="metric">
-                    <div class="metric-label">Largest known path</div>
+                    <div class="metric-label" data-i18n="metric.largest">Largest known path</div>
                     <div class="metric-value" id="largestKnownMetric">-</div>
                     <div class="metric-note" id="largestKnownNote">-</div>
                 </article>
                 <article class="metric">
-                    <div class="metric-label">Reported volumes</div>
+                    <div class="metric-label" data-i18n="metric.volumes">Reported volumes</div>
                     <div class="metric-value" id="volumeMetric">-</div>
-                    <div class="metric-note">Detected drive letters</div>
+                    <div class="metric-note" data-i18n="metric.volumesNote">Detected drive letters</div>
                 </article>
             </div>
         </section>
 
         <section class="panel" aria-labelledby="drivesHeading">
             <div class="section-heading">
-                <h2 id="drivesHeading">Drives</h2>
+                <h2 id="drivesHeading" data-i18n="section.drives">Drives</h2>
                 <span class="badge" id="driveCountBadge">-</span>
             </div>
             <div class="drive-list" id="driveList"></div>
@@ -786,7 +864,7 @@
             <div>
                 <section class="panel" aria-labelledby="knownPathsHeading">
                     <div class="section-heading">
-                        <h2 id="knownPathsHeading">Known Areas</h2>
+                        <h2 id="knownPathsHeading" data-i18n="section.knownAreas">Known Areas</h2>
                         <span class="badge" id="knownPathsBadge">-</span>
                     </div>
                     <div id="knownPathsTable"></div>
@@ -794,35 +872,40 @@
 
                 <section class="panel" aria-labelledby="engineerHeading">
                     <div class="section-heading">
-                        <h2 id="engineerHeading">Engineer Details</h2>
-                        <span class="badge">Drilldown</span>
+                        <h2 id="engineerHeading" data-i18n="section.engineer">Engineer Details</h2>
+                        <span class="badge" data-i18n="badge.drilldown">Drilldown</span>
                     </div>
                     <div class="detail-stack">
                         <details open>
-                            <summary>Largest C:\ root items</summary>
+                            <summary data-i18n="detail.cRoot">Largest C:\ root items</summary>
                             <div class="detail-body" id="rootBreakdown"></div>
                         </details>
                         <details>
-                            <summary>Largest AppData Local items</summary>
+                            <summary data-i18n="detail.local">Largest AppData Local items</summary>
                             <div class="detail-body" id="localBreakdown"></div>
                         </details>
                         <details>
-                            <summary>Largest AppData Roaming items</summary>
+                            <summary data-i18n="detail.roaming">Largest AppData Roaming items</summary>
                             <div class="detail-body" id="roamingBreakdown"></div>
                         </details>
                         <details>
-                            <summary>System files</summary>
+                            <summary data-i18n="detail.system">System files</summary>
                             <div class="detail-body" id="systemFiles"></div>
                         </details>
                         <details>
-                            <summary>Large files from deep scan</summary>
+                            <summary data-i18n="detail.largeFiles">Large files from deep scan</summary>
                             <div class="detail-body" id="largeFiles"></div>
                         </details>
                         <details>
-                            <summary>Docker summary</summary>
+                            <summary data-i18n="detail.docker">Docker summary</summary>
                             <div class="detail-body">
+                                <div id="dockerReclaimable"></div>
                                 <pre id="dockerSummary">No Docker data loaded.</pre>
                             </div>
+                        </details>
+                        <details id="errorsDetail" hidden>
+                            <summary data-i18n="detail.errors">Scan errors</summary>
+                            <div class="detail-body errors-list" id="errorsList"></div>
                         </details>
                     </div>
                 </section>
@@ -831,14 +914,14 @@
             <aside class="side-column">
                 <section class="panel" aria-labelledby="recommendationsHeading">
                     <div class="section-heading">
-                        <h2 id="recommendationsHeading">Cleanup Recommendations</h2>
+                        <h2 id="recommendationsHeading" data-i18n="section.recommendations">Cleanup Recommendations</h2>
                         <span class="badge" id="recommendationBadge">-</span>
                     </div>
                     <div class="recommendation-list" id="recommendationsList"></div>
                 </section>
 
                 <section class="panel" aria-labelledby="hostHeading">
-                    <h2 id="hostHeading">Report Metadata</h2>
+                    <h2 id="hostHeading" data-i18n="section.metadata">Report Metadata</h2>
                     <div id="metadata"></div>
                 </section>
             </aside>
@@ -848,8 +931,144 @@
     <script id="embeddedReportData" type="application/json"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator-tables/6.3.1/js/tabulator.min.js"></script>
     <script>
+        const SUPPORTED_SCHEMA_MAJOR = 2;
+        const LANG_KEY = "wdsc-lang";
+
+        const i18n = {
+            "en": {
+                "brand.eyebrow": "Local storage report",
+                "brand.title": "Windows Disk Storage Checker",
+                "brand.subtitle": "A local dashboard for finding disk pressure, large folders, cleanup candidates, and engineering details.",
+                "action.reload": "Reload report",
+                "action.loadJson": "Load JSON",
+                "action.export": "Export JSON",
+                "status.main": "Main drive status",
+                "fact.generated": "Generated",
+                "fact.machine": "Machine",
+                "fact.scanMode": "Scan mode",
+                "metric.used": "Total used",
+                "metric.usedNote": "Across reported volumes",
+                "metric.free": "Available free",
+                "metric.freeNote": "Across reported volumes",
+                "metric.largest": "Largest known path",
+                "metric.volumes": "Reported volumes",
+                "metric.volumesNote": "Detected drive letters",
+                "section.drives": "Drives",
+                "section.knownAreas": "Known Areas",
+                "section.engineer": "Engineer Details",
+                "section.recommendations": "Cleanup Recommendations",
+                "section.metadata": "Report Metadata",
+                "badge.drilldown": "Drilldown",
+                "detail.cRoot": "Largest C:\\ root items",
+                "detail.local": "Largest AppData Local items",
+                "detail.roaming": "Largest AppData Roaming items",
+                "detail.system": "System files",
+                "detail.largeFiles": "Large files from deep scan",
+                "detail.docker": "Docker summary",
+                "detail.errors": "Scan errors",
+                "status.critical": "Critical",
+                "status.warning": "Warning",
+                "status.healthy": "Healthy",
+                "deepScan": "Deep scan",
+                "defaultScan": "Default scan",
+                "noData": "No data available.",
+                "schemaWarning": "This dashboard expects schemaVersion 2.x but loaded {version}. Some fields may not render correctly. Re-run collect-storage.ps1.",
+                "history.title": "Recent C: usage",
+                "history.empty": "History will appear after multiple scans.",
+                "docker.reclaimable": "Reclaimable: {gb} GB",
+                "cache.summary": "Cache: {hits} hits / {misses} misses in {duration}s"
+            },
+            "zh-CN": {
+                "brand.eyebrow": "本地存储报告",
+                "brand.title": "Windows 磁盘存储检查器",
+                "brand.subtitle": "本地仪表板,用于查找磁盘压力、大型文件夹、清理候选项及工程细节。",
+                "action.reload": "重新加载",
+                "action.loadJson": "加载 JSON",
+                "action.export": "导出 JSON",
+                "status.main": "主驱动器状态",
+                "fact.generated": "生成时间",
+                "fact.machine": "计算机",
+                "fact.scanMode": "扫描模式",
+                "metric.used": "已用总计",
+                "metric.usedNote": "所有已报告的卷",
+                "metric.free": "可用空间",
+                "metric.freeNote": "所有已报告的卷",
+                "metric.largest": "最大已知路径",
+                "metric.volumes": "已报告的卷",
+                "metric.volumesNote": "检测到的驱动器号",
+                "section.drives": "驱动器",
+                "section.knownAreas": "已知区域",
+                "section.engineer": "工程师详情",
+                "section.recommendations": "清理建议",
+                "section.metadata": "报告元数据",
+                "badge.drilldown": "下钻分析",
+                "detail.cRoot": "C:\\ 根目录最大项",
+                "detail.local": "AppData Local 最大项",
+                "detail.roaming": "AppData Roaming 最大项",
+                "detail.system": "系统文件",
+                "detail.largeFiles": "深扫大文件",
+                "detail.docker": "Docker 摘要",
+                "detail.errors": "扫描错误",
+                "status.critical": "严重",
+                "status.warning": "警告",
+                "status.healthy": "健康",
+                "deepScan": "深度扫描",
+                "defaultScan": "默认扫描",
+                "noData": "无可用数据。",
+                "schemaWarning": "仪表板需要 schemaVersion 2.x,但加载了 {version}。部分字段可能无法正确显示,请重新运行 collect-storage.ps1。",
+                "history.title": "近期 C: 使用率",
+                "history.empty": "多次扫描后将显示历史趋势。",
+                "docker.reclaimable": "可回收: {gb} GB",
+                "cache.summary": "缓存: {hits} 命中 / {misses} 未命中, 用时 {duration} 秒"
+            }
+        };
+
+        let currentLang = (typeof localStorage !== "undefined" && localStorage.getItem(LANG_KEY)) || "en";
+        if (!i18n[currentLang]) { currentLang = "en"; }
+
+        function t(key, params) {
+            const table = i18n[currentLang] || i18n.en;
+            let value = table[key];
+            if (value === undefined) {
+                value = i18n.en[key];
+            }
+            if (value === undefined) {
+                return key;
+            }
+            if (params) {
+                for (const [k, v] of Object.entries(params)) {
+                    value = value.split(`{${k}}`).join(String(v));
+                }
+            }
+            return value;
+        }
+
+        function applyLanguage() {
+            document.documentElement.lang = currentLang === "zh-CN" ? "zh-CN" : "en";
+            document.querySelectorAll("[data-i18n]").forEach(node => {
+                const key = node.getAttribute("data-i18n");
+                node.textContent = t(key);
+            });
+        }
+
+        function formatSize(gb) {
+            const number = Number(gb || 0);
+            if (number >= 1024) {
+                return `${(number / 1024).toLocaleString(undefined, { maximumFractionDigits: 2 })} TB`;
+            }
+            if (number >= 1 || number === 0) {
+                return `${number.toLocaleString(undefined, { maximumFractionDigits: 2 })} GB`;
+            }
+            const mb = number * 1024;
+            if (mb >= 1) {
+                return `${mb.toLocaleString(undefined, { maximumFractionDigits: 1 })} MB`;
+            }
+            const kb = mb * 1024;
+            return `${kb.toLocaleString(undefined, { maximumFractionDigits: 0 })} KB`;
+        }
+
         const fallbackReport = {
-            schemaVersion: "1.0",
+            schemaVersion: "2.0",
             generatedAt: new Date().toISOString(),
             host: {
                 computerName: "Sample",
@@ -938,6 +1157,12 @@
 
         const elements = {
             notice: document.querySelector("#notice"),
+            schemaWarning: document.querySelector("#schemaWarning"),
+            historySparkline: document.querySelector("#historySparkline"),
+            dockerReclaimable: document.querySelector("#dockerReclaimable"),
+            errorsDetail: document.querySelector("#errorsDetail"),
+            errorsList: document.querySelector("#errorsList"),
+            langToggle: document.querySelector("#langToggle"),
             mainStatus: document.querySelector("#mainStatus"),
             mainStatusNote: document.querySelector("#mainStatusNote"),
             generatedFact: document.querySelector("#generatedFact"),
@@ -977,10 +1202,6 @@
             return template.content.textContent || "";
         }
 
-        function formatGb(value) {
-            const number = Number(value || 0);
-            return `${number.toLocaleString(undefined, { maximumFractionDigits: 2 })} GB`;
-        }
 
         function formatDate(value) {
             if (!value) {
@@ -1002,12 +1223,8 @@
         }
 
         function statusLabel(health) {
-            const labels = {
-                critical: "Critical",
-                warning: "Warning",
-                healthy: "Healthy"
-            };
-            return labels[health] || "Unknown";
+            if (!health) { return "Unknown"; }
+            return t(`status.${health}`);
         }
 
         function getMainDrive(data) {
@@ -1035,14 +1252,14 @@
             elements.mainStatus.textContent = main ? statusLabel(main.health) : "No data";
             elements.mainStatus.className = `status-value ${main?.health || ""}`;
             elements.mainStatusNote.textContent = main
-                ? `${main.driveLetter} uses ${main.usedPercent}% (${formatGb(main.usedGb)} of ${formatGb(main.totalGb)})`
+                ? `${main.driveLetter} uses ${main.usedPercent}% (${formatSize(main.usedGb)} of ${formatSize(main.totalGb)})`
                 : "Run collect-storage.ps1 to generate data";
             elements.generatedFact.textContent = formatDate(data.generatedAt);
             elements.machineFact.textContent = [host.computerName, host.userName].filter(Boolean).join(" / ") || "-";
-            elements.scanModeFact.textContent = data.scan?.deepScan ? "Deep scan" : "Default scan";
-            elements.usedMetric.textContent = formatGb(usedTotal);
-            elements.freeMetric.textContent = formatGb(freeTotal);
-            elements.largestKnownMetric.textContent = largestKnown ? formatGb(largestKnown.gb) : "-";
+            elements.scanModeFact.textContent = data.scan?.deepScan ? t("deepScan") : t("defaultScan");
+            elements.usedMetric.textContent = formatSize(usedTotal);
+            elements.freeMetric.textContent = formatSize(freeTotal);
+            elements.largestKnownMetric.textContent = largestKnown ? formatSize(largestKnown.gb) : "-";
             elements.largestKnownNote.textContent = largestKnown ? largestKnown.label : "No known path data";
             elements.volumeMetric.textContent = String(volumes.length || 0);
             elements.driveCountBadge.textContent = `${volumes.length || 0} volumes`;
@@ -1074,8 +1291,8 @@
                             <div class="bar-fill ${escapeHtml(health)}" style="width: ${percent}%"></div>
                         </div>
                         <div class="drive-stats">
-                            <span><strong>${formatGb(volume.usedGb)}</strong>Used</span>
-                            <span><strong>${formatGb(volume.freeGb)}</strong>Free</span>
+                            <span><strong>${formatSize(volume.usedGb)}</strong>Used</span>
+                            <span><strong>${formatSize(volume.freeGb)}</strong>Free</span>
                             <span><strong>${percent}%</strong>Used</span>
                         </div>
                     </article>
@@ -1205,7 +1422,7 @@
                     sorter: "number",
                     hozAlign: "right",
                     width: 120,
-                    formatter: cell => formatGb(cell.getValue())
+                    formatter: cell => formatSize(cell.getValue())
                 },
                 {
                     title: "Category",
@@ -1231,7 +1448,7 @@
         function fileColumns() {
             return [
                 { title: "Name", field: "name", minWidth: 180, formatter: cell => `<strong>${escapeHtml(cell.getValue())}</strong>` },
-                { title: "Size", field: "gb", sorter: "number", hozAlign: "right", width: 120, formatter: cell => formatGb(cell.getValue()) },
+                { title: "Size", field: "gb", sorter: "number", hozAlign: "right", width: 120, formatter: cell => formatSize(cell.getValue()) },
                 { title: "Path", field: "path", minWidth: 320, formatter: cell => `<div class="path">${escapeHtml(cell.getValue())}</div>` }
             ];
         }
@@ -1294,17 +1511,32 @@
 
         function renderMetadata(data) {
             const host = data.host || {};
+            const scan = data.scan || {};
+            const cache = scan.cache || {};
+            const cacheRow = (cache.hits !== undefined || cache.misses !== undefined)
+                ? `<tr><th scope="row">Cache</th><td>${escapeHtml(t("cache.summary", { hits: cache.hits ?? 0, misses: cache.misses ?? 0, duration: scan.durationSeconds ?? "?" }))}</td></tr>`
+                : "";
+            const parallelRow = scan.parallel !== undefined
+                ? `<tr><th scope="row">Parallel</th><td>${scan.parallel ? "Yes" : "No"} (PS ${escapeHtml(scan.psVersion || "?")})</td></tr>`
+                : "";
+            const durationRow = scan.durationSeconds !== undefined
+                ? `<tr><th scope="row">Duration</th><td>${escapeHtml(scan.durationSeconds + "s")}</td></tr>`
+                : "";
             elements.metadata.innerHTML = `
                 <div class="table-wrap">
                     <table>
                         <tbody>
+                            <tr><th scope="row">Schema</th><td>${escapeHtml(data.schemaVersion || "1.0")}</td></tr>
                             <tr><th scope="row">Generated</th><td>${escapeHtml(formatDate(data.generatedAt))}</td></tr>
                             <tr><th scope="row">Computer</th><td>${escapeHtml(host.computerName || "-")}</td></tr>
                             <tr><th scope="row">User</th><td>${escapeHtml(host.userName || "-")}</td></tr>
                             <tr><th scope="row">OS</th><td>${escapeHtml(host.osCaption || "-")} ${escapeHtml(host.osVersion || "")}</td></tr>
                             <tr><th scope="row">Architecture</th><td>${escapeHtml(host.architecture || "-")}</td></tr>
-                            <tr><th scope="row">Deep scan</th><td>${data.scan?.deepScan ? "Enabled" : "Disabled"}</td></tr>
-                            <tr><th scope="row">Destructive actions</th><td>${data.scan?.destructiveActions ? "Yes" : "No"}</td></tr>
+                            <tr><th scope="row">Deep scan</th><td>${scan.deepScan ? "Enabled" : "Disabled"}</td></tr>
+                            ${durationRow}
+                            ${parallelRow}
+                            ${cacheRow}
+                            <tr><th scope="row">Destructive actions</th><td>${scan.destructiveActions ? "Yes" : "No"}</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1315,13 +1547,119 @@
             tableInstances.forEach(table => table.redraw(true));
         }
 
+        function renderSchemaWarning(data) {
+            const version = String(data.schemaVersion || "");
+            const major = parseInt(version.split(".")[0], 10);
+            if (!version || major !== SUPPORTED_SCHEMA_MAJOR) {
+                elements.schemaWarning.textContent = t("schemaWarning", { version: version || "unknown" });
+                elements.schemaWarning.classList.add("is-visible");
+            } else {
+                elements.schemaWarning.textContent = "";
+                elements.schemaWarning.classList.remove("is-visible");
+            }
+        }
+
+        function renderHistorySparkline(data) {
+            const container = elements.historySparkline;
+            if (!container) { return; }
+            const history = Array.isArray(data.history) ? data.history : [];
+            const points = history
+                .map(entry => {
+                    const vol = (entry.volumes || []).find(v => v.driveLetter === "C:") || (entry.volumes || [])[0];
+                    if (!vol) { return null; }
+                    return {
+                        when: entry.generatedAt,
+                        percent: Number(vol.usedPercent || 0),
+                        used: Number(vol.usedGb || 0)
+                    };
+                })
+                .filter(Boolean);
+
+            if (points.length < 2) {
+                container.innerHTML = `<div class="muted" style="font-size:0.82rem;margin-top:0.5rem">${escapeHtml(t("history.empty"))}</div>`;
+                return;
+            }
+
+            const width = 320;
+            const height = 56;
+            const padX = 4;
+            const padY = 6;
+            const minP = Math.min(...points.map(p => p.percent));
+            const maxP = Math.max(...points.map(p => p.percent));
+            const range = Math.max(maxP - minP, 1);
+            const stepX = (width - padX * 2) / (points.length - 1);
+
+            const coords = points.map((p, i) => {
+                const x = padX + i * stepX;
+                const y = padY + (1 - (p.percent - minP) / range) * (height - padY * 2);
+                return [x, y];
+            });
+
+            const line = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+            const area = `${line} L${coords[coords.length - 1][0].toFixed(1)},${height - padY} L${coords[0][0].toFixed(1)},${height - padY} Z`;
+            const last = coords[coords.length - 1];
+            const latest = points[points.length - 1];
+
+            container.innerHTML = `
+                <div class="muted" style="font-size:0.78rem;margin-top:0.55rem;display:flex;justify-content:space-between;gap:0.5rem">
+                    <span>${escapeHtml(t("history.title"))}</span>
+                    <span>${latest.percent}% • ${escapeHtml(formatSize(latest.used))}</span>
+                </div>
+                <svg class="sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="area" d="${area}"></path>
+                    <path class="line" d="${line}"></path>
+                    <circle class="last" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3"></circle>
+                </svg>
+            `;
+        }
+
+        function renderErrors(data) {
+            const errs = Array.isArray(data.errors) ? data.errors : [];
+            if (!errs.length) {
+                elements.errorsDetail.hidden = true;
+                elements.errorsList.innerHTML = "";
+                return;
+            }
+            elements.errorsDetail.hidden = false;
+            const summary = elements.errorsDetail.querySelector("summary");
+            if (summary) {
+                summary.textContent = `${t("detail.errors")} (${errs.length})`;
+            }
+            elements.errorsList.innerHTML = errs.slice(0, 200).map(err => `
+                <div class="error-row">
+                    <div class="error-stage">${escapeHtml(err.stage || "error")}</div>
+                    <div class="error-path">${escapeHtml(err.path || "")}</div>
+                    <div>${escapeHtml(err.message || "")}</div>
+                </div>
+            `).join("");
+        }
+
+        function renderDockerReclaimable(data) {
+            const reclaim = data.docker?.reclaimable;
+            if (!reclaim || !reclaim.gb) {
+                elements.dockerReclaimable.innerHTML = "";
+                return;
+            }
+            const rows = (reclaim.rows || []).map(r => `
+                <tr><th scope="row">${escapeHtml(r.type)}</th><td class="num">${escapeHtml(formatSize(r.gb))}</td></tr>
+            `).join("");
+            elements.dockerReclaimable.innerHTML = `
+                <div class="status warning" style="margin-bottom:0.6rem">${escapeHtml(t("docker.reclaimable", { gb: reclaim.gb }))}</div>
+                ${rows ? `<div class="table-wrap" style="margin-bottom:0.6rem"><table><tbody>${rows}</tbody></table></div>` : ""}
+            `;
+        }
+
         function render(data) {
             report = data;
+            renderSchemaWarning(data);
             renderSummary(data);
             renderDrives(data);
+            renderHistorySparkline(data);
             renderKnownPaths(data);
             renderRecommendations(data);
             renderEngineerDetails(data);
+            renderDockerReclaimable(data);
+            renderErrors(data);
             renderMetadata(data);
             window.requestAnimationFrame(redrawTables);
         }
@@ -1383,13 +1721,28 @@
             reader.readAsText(file);
         }
 
+        function updateLangToggleLabel() {
+            elements.langToggle.textContent = currentLang === "zh-CN" ? "EN" : "中文";
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === "zh-CN" ? "en" : "zh-CN";
+            try { localStorage.setItem(LANG_KEY, currentLang); } catch (_) { /* ignore */ }
+            applyLanguage();
+            updateLangToggleLabel();
+            if (report) { render(report); }
+        }
+
         elements.reloadButton.addEventListener("click", loadReport);
         elements.exportButton.addEventListener("click", exportJson);
         elements.jsonInput.addEventListener("change", loadJsonFile);
+        elements.langToggle.addEventListener("click", toggleLanguage);
         document.querySelectorAll("details").forEach(detail => {
             detail.addEventListener("toggle", () => window.requestAnimationFrame(redrawTables));
         });
 
+        applyLanguage();
+        updateLangToggleLabel();
         loadReport();
     </script>
 </body>
